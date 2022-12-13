@@ -70,7 +70,11 @@ namespace FlightAPI.Controllers
                                 DepartureICAO = reader.GetString("DepartureICAO"),
                             };
 
-
+                            flight.Planned = flight.Planned.AddHours(-3);
+                            if(flight.Estimated != null)
+                            {
+                                flight.Estimated = flight.Estimated.Value.AddHours(-3);
+                            }
 
                             var properties = flight.GetType().GetProperties();
 
@@ -89,7 +93,9 @@ namespace FlightAPI.Controllers
                     }
                 }
                 connection.Close();
-                return JsonConvert.SerializeObject(flights);
+                JsonSerializerSettings settings = new JsonSerializerSettings();
+                settings.NullValueHandling = NullValueHandling.Include;
+                return JsonConvert.SerializeObject(flights, settings);
             }
             
 
@@ -125,6 +131,8 @@ namespace FlightAPI.Controllers
 
 
         }
+        
+        
 
     }
 
