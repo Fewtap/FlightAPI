@@ -1,6 +1,6 @@
 ﻿namespace FlightData
 {
-    public struct Room
+    public class Room
     {
         public string RoomNumber { get; set; }
         public string FlightHash { get; set; }

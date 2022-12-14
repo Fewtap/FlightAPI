@@ -5,6 +5,7 @@ using System.Data;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace FlightAPI.Controllers
 {
@@ -38,7 +39,7 @@ namespace FlightAPI.Controllers
                 }
                 catch (Exception ex)
                 {
-
+                    Console.WriteLine(ex.Message);
                     return Content(ex.Message);
                 }
 
@@ -115,9 +116,9 @@ namespace FlightAPI.Controllers
         //TODO: Make sure that the json is being received correctly
         //BUG : The json is not being received correctly, it's sending a 400 bad request
         [HttpPost]
-        [Route("/rooms/add")]
         public string PostRoom([FromBody]string json)
         {
+            Debug.WriteLine("Post request recieved");
             List<Room> rooms;
             // Create the connection string
             string connectionString =
@@ -158,8 +159,8 @@ namespace FlightAPI.Controllers
             return "Success";
         }
 
-        [HttpDelete("{hash}-{roomnumber}")]
-        public void DeleteRoom(string hash, string roomnumber)
+        [HttpDelete("{hash}/room/{roomnumber}")]
+        public string DeleteRoom(string hash, string roomnumber)
         {
             // Create the connection string
             string connectionString =
@@ -183,6 +184,71 @@ namespace FlightAPI.Controllers
                     // Execute the query
                     command.ExecuteNonQuery();
                 }
+            }
+            System.Console.WriteLine(roomnumber);
+            return roomnumber + " deleted";
+
+        }
+
+        [HttpGet("rooms/{hash}")]
+        
+        public ContentResult GetRooms(string hash)
+        {
+            string connectionString = "server=127";
+            // Connect to the MySQL database
+            connectionString =
+                @"server=lin-13041-7784-mysql-primary.servers.linodedb.net;user id=linroot;password=7ZmXl9xm9J@qsBIZ;database=Departures";
+
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return Content(ex.Message);
+                }
+
+
+
+                // Build the SQL query
+                string query = "SELECT * FROM Rooms WHERE FlightHash = @hash";
+
+                // Execute the query and retrieve the flights
+                var rooms = new List<Room>();
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@hash", hash);
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // Create a Flight object for each record in the result set
+                            var room = new Room(reader.GetString("RoomNumber"),reader.GetString("FlightHash"));
+                            
+
+                            
+                            
+
+                            
+
+                            rooms.Add(room);
+
+                        }
+                    }
+                }
+
+                connection.Close();
+                JsonSerializerSettings settings = new JsonSerializerSettings();
+                settings.NullValueHandling = NullValueHandling.Include;
+                string json = JsonConvert.SerializeObject(rooms, Formatting.None, settings);
+                json.Trim();
+
+                return Content(json, "application/json");
             }
 
 
